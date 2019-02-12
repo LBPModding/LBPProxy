@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 
 @Slf4j
 public class LittleBigPlanetProxy {
+    public static final String API_BASE_URL = "http://littlebigplanetps3.online.scee.com:10060/LITTLEBIGPLANETPS3_XML";
+
     private HttpProxyServer proxyServer;
     private InetSocketAddress address;
     private ProxyFilterSource filterSource;
@@ -20,7 +22,7 @@ public class LittleBigPlanetProxy {
         this.address = address;
         this.filterSource = new ProxyFilterSource();
         // Register built-in handlers
-        filterSource.registerPostHandler(".*/upload/.*", new ResourceUploadHandler());
+        filterSource.registerPostHandler(API_BASE_URL + "/upload/.*", new ResourceUploadHandler());
     }
 
     public static void main(String[] args) {

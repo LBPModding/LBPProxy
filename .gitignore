@@ -1,3 +1,6 @@
+# Program output folder
+output/
+
 # Git
 *.orig
 !.gitignore

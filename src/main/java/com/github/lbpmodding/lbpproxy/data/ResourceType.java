@@ -6,23 +6,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ResourceType {
-    LEVEL("LVL"),
-    PLAN("PLN"),
-    TEX("TEX");
+    LEVEL("LVLb"),
+    PLAN("PLNb"),
+    TEX("TEX ");
 
     private static Map<String, ResourceType> headerToType = new HashMap<>();
 
     static {
         for (ResourceType current : ResourceType.values()) {
-            headerToType.put(current.getHeader(), current);
+            headerToType.put(current.getMagic(), current);
         }
     }
 
     @Getter
-    private String header;
+    private String magic;
 
-    ResourceType(String header) {
-        this.header = header;
+    ResourceType(String magic) {
+        this.magic = magic;
     }
 
     public static ResourceType fromHeader(String header) {
