@@ -25,7 +25,7 @@ public enum ResourceType {
         this.magic = magic;
     }
 
-    public static ResourceType fromHeader(String header) {
+    public static ResourceType fromMagic(String header) {
         return headerToType.get(header);
     }
 }
