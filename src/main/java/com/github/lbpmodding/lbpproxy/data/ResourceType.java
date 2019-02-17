@@ -1,32 +1,36 @@
 package com.github.lbpmodding.lbpproxy.data;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 public enum ResourceType {
-    LEVEL("LVLb"),
-    PLAN("PLNb"),
-    TEX("TEX ");
+    LEVEL("LVLb", true, true),
+    PLAN("PLNb", true, true),
+    TEXTURE("TEX ", true, false),
+    PHOTO(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, false, false); // JPEG Header
 
-    private static Map<String, ResourceType> headerToType = new HashMap<>();
+    private final byte[] header;
+    private final boolean compressed;
+    private final boolean descriptor;
 
-    static {
-        for (ResourceType current : ResourceType.values()) {
-            headerToType.put(current.getMagic(), current);
-        }
+    ResourceType(byte[] header, boolean compressed, boolean descriptor) {
+        this.header = header;
+        this.compressed = compressed;
+        this.descriptor = descriptor;
     }
 
-    private final String magic;
-
-    ResourceType(String magic) {
-        this.magic = magic;
+    ResourceType(String header, boolean compressed, boolean descriptor) {
+        this(header.getBytes(StandardCharsets.UTF_8), compressed, descriptor);
     }
 
-    public String getMagic() {
-        return magic;
+    public byte[] getHeader() {
+        return header;
     }
 
-    public static ResourceType fromMagic(String header) {
-        return headerToType.get(header);
+    public boolean isCompressed() {
+        return compressed;
+    }
+
+    public boolean hasDescriptor() {
+        return descriptor;
     }
 }

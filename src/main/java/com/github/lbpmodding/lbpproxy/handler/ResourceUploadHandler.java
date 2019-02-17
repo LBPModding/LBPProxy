@@ -1,24 +1,22 @@
 package com.github.lbpmodding.lbpproxy.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.lbpmodding.lbpproxy.LittleBigPlanetProxy;
 import com.github.lbpmodding.lbpproxy.data.DecompressedResource;
-import com.github.lbpmodding.lbpproxy.data.ResourceType;
 import com.github.lbpmodding.lbpproxy.service.ResourceCompressionService;
-import com.github.lbpmodding.lbpproxy.utility.HexUtilities;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@Slf4j
 public class ResourceUploadHandler implements RequestHandler {
-    private static final byte[] JPEG_HEADER = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+
+    private static final Logger log = LoggerFactory.getLogger(LittleBigPlanetProxy.class);
 
     private ObjectMapper objectMapper = new ObjectMapper();
     private ResourceCompressionService compressionService = new ResourceCompressionService();
@@ -28,48 +26,41 @@ public class ResourceUploadHandler implements RequestHandler {
         log.info("Upload detected: " + request.uri());
         String resourceId = request.uri().split("/upload/")[1];
         ByteBuf content = request.content();
-        // Check the header for raw files
-        byte[] header = new byte[4];
-        content.getBytes(0, header);
-        if (HexUtilities.checkHeader(header, JPEG_HEADER)) {
-            log.info("Image resource!");
-            handleImage(resourceId, content);
+        DecompressedResource resource;
+        try {
+            resource = compressionService.detectAndDecompress(resourceId, content);
+        } catch (IOException e) {
+            log.error("Unable to decompress resource data!", e);
             return;
         }
-        String magic = new String(header, StandardCharsets.UTF_8);
-        ResourceType type = ResourceType.fromMagic(magic);
-        if (type == null) {
-            log.warn("UNKNOWN resource type with magic value '" + magic + "'!");
+        if (resource == null) {
+            log.warn("Unknown resource type!");
             return;
         }
-        ByteBuf dataSource = content.skipBytes(4); // Skip magic
-        switch (type) {
+        switch (resource.getType()) {
             case LEVEL:
-                log.info("Level resource!");
+                log.info("Level resource");
                 break;
             case PLAN:
-                log.info("Plan resource!");
-                handlePlan(resourceId, dataSource);
+                log.info("Plan resource");
+                handlePlan(resource);
                 break;
-            case TEX:
-                log.info("Tex resource!");
-                handleTex(resourceId, dataSource);
+            case TEXTURE:
+                log.info("Texture resource");
+                handleTexture(resource);
+                break;
+            case PHOTO:
+                log.info("Photo resource");
+                handleImage(resource);
                 break;
         }
     }
 
-    private void handlePlan(String resourceId, ByteBuf source) {
-        DecompressedResource resource;
-        try {
-            resource = compressionService.decompress(source);
-        } catch (IOException e) {
-            log.error("Unable to decompress PLN data!", e);
-            return;
-        }
+    private void handlePlan(DecompressedResource resource) {
         Path plansFolder = Paths.get("./output/resources/plan/");
         try {
             Files.createDirectories(plansFolder);
-            Path outputFile = plansFolder.resolve(resourceId + ".pln");
+            Path outputFile = plansFolder.resolve(resource.getId() + ".pln");
             Files.deleteIfExists(outputFile);
             Files.write(outputFile, resource.getData());
         } catch (IOException e) {
@@ -78,7 +69,7 @@ public class ResourceUploadHandler implements RequestHandler {
         Path descriptorFolder = Paths.get("./output/resources/descriptor/");
         try {
             Files.createDirectories(descriptorFolder);
-            Path outputFile = descriptorFolder.resolve(resourceId + ".json");
+            Path outputFile = descriptorFolder.resolve(resource.getId() + ".json");
             Files.deleteIfExists(outputFile);
             objectMapper.writeValue(outputFile.toFile(), resource.getDescriptor());
         } catch (IOException e) {
@@ -86,18 +77,11 @@ public class ResourceUploadHandler implements RequestHandler {
         }
     }
 
-    private void handleTex(String resourceId, ByteBuf source) {
-        DecompressedResource resource;
-        try {
-            resource = compressionService.decompressSimple(source);
-        } catch (IOException e) {
-            log.error("Unable to decompress TEX data!", e);
-            return;
-        }
+    private void handleTexture(DecompressedResource resource) {
         Path thumbnailsFolder = Paths.get("./output/resources/tex/");
         try {
             Files.createDirectories(thumbnailsFolder);
-            Path outputFile = thumbnailsFolder.resolve(resourceId + ".dds");
+            Path outputFile = thumbnailsFolder.resolve(resource.getId() + ".dds");
             Files.deleteIfExists(outputFile);
             Files.write(outputFile, resource.getData());
         } catch (IOException e) {
@@ -105,14 +89,13 @@ public class ResourceUploadHandler implements RequestHandler {
         }
     }
 
-    private void handleImage(String resourceId, ByteBuf source) {
-        byte[] data = ByteBufUtil.getBytes(source);
+    private void handleImage(DecompressedResource resource) {
         Path imageFolder = Paths.get("./output/resources/img/");
         try {
             Files.createDirectories(imageFolder);
-            Path outputFile = imageFolder.resolve(resourceId + ".jpeg");
+            Path outputFile = imageFolder.resolve(resource.getId() + ".jpeg");
             Files.deleteIfExists(outputFile);
-            Files.write(outputFile, data);
+            Files.write(outputFile, resource.getData());
         } catch (IOException e) {
             e.printStackTrace();
         }

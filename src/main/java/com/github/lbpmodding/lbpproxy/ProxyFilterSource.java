@@ -3,17 +3,20 @@ package com.github.lbpmodding.lbpproxy;
 import com.github.lbpmodding.lbpproxy.handler.RequestHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import lombok.extern.slf4j.Slf4j;
 import org.littleshoot.proxy.HttpFilters;
 import org.littleshoot.proxy.HttpFiltersAdapter;
 import org.littleshoot.proxy.HttpFiltersSourceAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-@Slf4j
 public class ProxyFilterSource extends HttpFiltersSourceAdapter {
+
+    private static final Logger log = LoggerFactory.getLogger(LittleBigPlanetProxy.class);
+
     private Map<Pattern, RequestHandler> getHandlers;
     private Map<Pattern, RequestHandler> postHandlers;
 

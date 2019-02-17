@@ -1,9 +1,9 @@
 package com.github.lbpmodding.lbpproxy.utility;
 
-import lombok.experimental.UtilityClass;
+public final class HexUtilities {
 
-@UtilityClass
-public class HexUtilities {
+    private HexUtilities() {
+    }
 
     public static String bytesToHexString(byte... bytes) {
         StringBuilder builder = new StringBuilder(bytes.length * 2);
@@ -11,17 +11,5 @@ public class HexUtilities {
             builder.append(String.format("%02x", current));
         }
         return builder.toString();
-    }
-
-    public static boolean checkHeader(byte[] data, byte[] header) {
-        if (data.length < header.length) {
-            return false;
-        }
-        for (int i = 0; i < header.length; i++) {
-            if (data[i] != header[i]) {
-                return false;
-            }
-        }
-        return true;
     }
 }
