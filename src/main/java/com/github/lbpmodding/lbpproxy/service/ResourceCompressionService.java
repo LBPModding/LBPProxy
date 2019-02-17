@@ -4,6 +4,7 @@ import com.github.lbpmodding.lbpproxy.data.DecompressedResource;
 import com.github.lbpmodding.lbpproxy.data.ResourceDescriptor;
 import com.github.lbpmodding.lbpproxy.data.ResourceType;
 import com.github.lbpmodding.lbpproxy.utility.HexUtilities;
+import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 
@@ -67,7 +68,7 @@ public class ResourceCompressionService {
             source.readBytes(compressedStream); // Compressed stream
             try (ByteArrayInputStream byteInput = new ByteArrayInputStream(compressedStream);
                  InflaterInputStream inflaterInput = new InflaterInputStream(byteInput)) {
-                outputBuffer.put(inflaterInput.readAllBytes());
+                outputBuffer.put(ByteStreams.toByteArray(inflaterInput));
             }
         }
         return new DecompressedResource(id, type, outputBuffer.array());
