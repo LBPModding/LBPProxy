@@ -1,7 +1,5 @@
 package com.github.lbpmodding.lbpproxy.data;
 
-import lombok.Getter;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,11 +16,14 @@ public enum ResourceType {
         }
     }
 
-    @Getter
-    private String magic;
+    private final String magic;
 
     ResourceType(String magic) {
         this.magic = magic;
+    }
+
+    public String getMagic() {
+        return magic;
     }
 
     public static ResourceType fromMagic(String header) {

@@ -1,16 +1,13 @@
 package com.github.lbpmodding.lbpproxy.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.lbpmodding.lbpproxy.data.DecompressedData;
+import com.github.lbpmodding.lbpproxy.data.DecompressedResource;
 import com.github.lbpmodding.lbpproxy.data.ResourceType;
-import com.github.lbpmodding.lbpproxy.service.CustomCompressionService;
+import com.github.lbpmodding.lbpproxy.service.ResourceCompressionService;
 import com.github.lbpmodding.lbpproxy.utility.HexUtilities;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -24,7 +21,7 @@ public class ResourceUploadHandler implements RequestHandler {
     private static final byte[] JPEG_HEADER = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
 
     private ObjectMapper objectMapper = new ObjectMapper();
-    private CustomCompressionService compressionService = new CustomCompressionService();
+    private ResourceCompressionService compressionService = new ResourceCompressionService();
 
     @Override
     public void handle(FullHttpRequest request) {
@@ -34,7 +31,7 @@ public class ResourceUploadHandler implements RequestHandler {
         // Check the header for raw files
         byte[] header = new byte[4];
         content.getBytes(0, header);
-        if(HexUtilities.checkHeader(header, JPEG_HEADER)) {
+        if (HexUtilities.checkHeader(header, JPEG_HEADER)) {
             log.info("Image resource!");
             handleImage(resourceId, content);
             return;
@@ -62,9 +59,9 @@ public class ResourceUploadHandler implements RequestHandler {
     }
 
     private void handlePlan(String resourceId, ByteBuf source) {
-        DecompressedData decompressedData;
+        DecompressedResource resource;
         try {
-            decompressedData = compressionService.decompress(source);
+            resource = compressionService.decompress(source);
         } catch (IOException e) {
             log.error("Unable to decompress PLN data!", e);
             return;
@@ -74,7 +71,7 @@ public class ResourceUploadHandler implements RequestHandler {
             Files.createDirectories(plansFolder);
             Path outputFile = plansFolder.resolve(resourceId + ".pln");
             Files.deleteIfExists(outputFile);
-            Files.write(outputFile, decompressedData.getData());
+            Files.write(outputFile, resource.getData());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -83,21 +80,16 @@ public class ResourceUploadHandler implements RequestHandler {
             Files.createDirectories(descriptorFolder);
             Path outputFile = descriptorFolder.resolve(resourceId + ".json");
             Files.deleteIfExists(outputFile);
-            ObjectNode rootNode = objectMapper.createObjectNode();
-            rootNode.put("game_revision", decompressedData.getGameRevision());
-            ArrayNode dependenciesArray = objectMapper.createArrayNode();
-            decompressedData.getDependencies().forEach(dependency -> dependenciesArray.add(dependency.getIdentifier()));
-            rootNode.set("dependencies", dependenciesArray);
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputFile.toFile(), rootNode);
+            objectMapper.writeValue(outputFile.toFile(), resource.getDescriptor());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void handleTex(String resourceId, ByteBuf source) {
-        byte[] decompressedData;
+        DecompressedResource resource;
         try {
-            decompressedData = compressionService.decompressMinimal(source);
+            resource = compressionService.decompressSimple(source);
         } catch (IOException e) {
             log.error("Unable to decompress TEX data!", e);
             return;
@@ -107,7 +99,7 @@ public class ResourceUploadHandler implements RequestHandler {
             Files.createDirectories(thumbnailsFolder);
             Path outputFile = thumbnailsFolder.resolve(resourceId + ".dds");
             Files.deleteIfExists(outputFile);
-            Files.write(outputFile, decompressedData);
+            Files.write(outputFile, resource.getData());
         } catch (IOException e) {
             e.printStackTrace();
         }
