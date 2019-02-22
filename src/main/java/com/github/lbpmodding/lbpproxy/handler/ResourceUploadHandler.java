@@ -40,6 +40,7 @@ public class ResourceUploadHandler implements RequestHandler {
         switch (resource.getType()) {
             case LEVEL:
                 log.info("Level resource");
+                handleLevel(resource);
                 break;
             case PLAN:
                 log.info("Plan resource");
@@ -56,6 +57,27 @@ public class ResourceUploadHandler implements RequestHandler {
         }
     }
 
+    private void handleLevel(DecompressedResource resource) {
+        Path plansFolder = Paths.get("./output/resources/level/");
+        try {
+            Files.createDirectories(plansFolder);
+            Path outputFile = plansFolder.resolve(resource.getId() + ".lvl");
+            Files.deleteIfExists(outputFile);
+            Files.write(outputFile, resource.getData());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Path descriptorFolder = Paths.get("./output/resources/level_descriptor/");
+        try {
+            Files.createDirectories(descriptorFolder);
+            Path outputFile = descriptorFolder.resolve(resource.getId() + ".json");
+            Files.deleteIfExists(outputFile);
+            objectMapper.writeValue(outputFile.toFile(), resource.getDescriptor());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void handlePlan(DecompressedResource resource) {
         Path plansFolder = Paths.get("./output/resources/plan/");
         try {
@@ -66,7 +88,7 @@ public class ResourceUploadHandler implements RequestHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Path descriptorFolder = Paths.get("./output/resources/descriptor/");
+        Path descriptorFolder = Paths.get("./output/resources/plan_descriptor/");
         try {
             Files.createDirectories(descriptorFolder);
             Path outputFile = descriptorFolder.resolve(resource.getId() + ".json");
