@@ -1,0 +1,17 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: io.netty:netty-all
+    versions:
+    - 4.1.58.Final
+    - 4.1.59.Final
+    - 4.1.60.Final
+    - 4.1.62.Final
+  - dependency-name: xyz.rogfam:littleproxy
+    versions:
+    - 2.0.2
